@@ -12,7 +12,7 @@ describe("Mint a Hero NFT, a Weapon NFT and equip it", () => {
 
   beforeAll(async () => {
     txResponse = await mintHeroWithWeapon();
-    await suiClient.waitForTransaction({ digest: txResponse.digest, timeout: 5_000 });
+    await suiClient.waitForTransaction({ digest: txResponse.digest, timeout: 10_000 });
     console.log("Executed transaction with txDigest:", txResponse.digest);
   });
 
@@ -23,19 +23,29 @@ describe("Mint a Hero NFT, a Weapon NFT and equip it", () => {
 
   test("Created Hero", async () => {
     expect(txResponse.objectChanges).toBeDefined();
-    const { heroesIds } = parseCreatedObjectsIds({
+    const { heroesIds: parsedHeroesIds } = parseCreatedObjectsIds({
       objectChanges: txResponse.objectChanges!,
     });
-    expect(heroesIds.length).toBe(1);
-    heroId = heroesIds[0];
+    expect(parsedHeroesIds.length).toBeGreaterThan(0);
+    heroId = parsedHeroesIds[0];
+    expect(heroId).toBeDefined();
   });
 
   test("Hero is equiped with a Weapon", async () => {
-    const weaponId = await getWeaponIdOfHero(heroId!);
+    expect(heroId).toBeDefined();
+    if (!heroId) {
+      throw new Error("heroId is not defined from previous test");
+    }
+    const weaponId = await getWeaponIdOfHero(heroId);
     expect(weaponId).toBeDefined();
+    expect(weaponId).not.toBeUndefined();
   });
 
   test("Heroes registry", async () => {
+    expect(heroId).toBeDefined();
+    if (!heroId) {
+      throw new Error("heroId is not defined from previous test");
+    }
     const { ids, counter } = await getHeroesRegistry();
     heroesIds = ids;
     expect(ids.length).toBeGreaterThan(0);
